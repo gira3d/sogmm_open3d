@@ -1,0 +1,8 @@
+{
+  "name": "sogmm_open3d",
+  "dependencies": {
+    "open3d_colcon",
+    "self_organizing_gmm"
+  },
+  "hooks": []
+}
