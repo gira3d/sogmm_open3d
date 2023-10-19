@@ -56,26 +56,26 @@ public:
   }
 
   GMM(unsigned int n_components, unsigned int n_samples)
-    : GMM(n_components, n_samples, "CUDA:0", false, "gmm_gpu_stats",
-          "stats.csv")
+      : GMM(n_components, n_samples, "CUDA:0", false, "gmm_gpu_stats",
+            "stats.csv")
   {
   }
 
   GMM(unsigned int n_components, unsigned int n_samples, std::string device)
-    : GMM(n_components, n_samples, device, false, "gmm_gpu_stats", "stats.csv")
+      : GMM(n_components, n_samples, device, false, "gmm_gpu_stats", "stats.csv")
   {
   }
 
   GMM(unsigned int n_components, unsigned int n_samples, std::string device,
       bool save_stats)
-    : GMM(n_components, n_samples, device, save_stats, "gmm_gpu_stats",
-          "stats.csv")
+      : GMM(n_components, n_samples, device, save_stats, "gmm_gpu_stats",
+            "stats.csv")
   {
   }
 
   GMM(unsigned int n_components, unsigned int n_samples, std::string device,
-      const bool save_stats, const std::string& stats_dir,
-      const std::string& stats_file)
+      const bool save_stats, const std::string &stats_dir,
+      const std::string &stats_file)
   {
     n_components_ = n_components;
     n_samples_ = n_samples;
@@ -93,8 +93,8 @@ public:
   {
   }
 
-  void initialize(const bool save_stats, const std::string& stats_dir,
-                  const std::string& stats_file)
+  void initialize(const bool save_stats, const std::string &stats_dir,
+                  const std::string &stats_file)
   {
     tp_ = TimeProfiler();
     if (save_stats)
@@ -105,24 +105,24 @@ public:
     int N = n_samples_;
     int K = n_components_;
 
-    Weights_ = Tensor::Zeros({ 1, K, 1 }, dtype_, device_);
-    Means_ = Tensor::Zeros({ 1, K, D }, dtype_, device_);
-    Covariances_ = Tensor::Zeros({ 1, K, D, D }, dtype_, device_);
-    Covs_Chol_ = Tensor::Zeros({ 1, K, D, D }, dtype_, device_);
-    Precs_Chol_ = Tensor::Zeros({ 1, K, D, D }, dtype_, device_);
+    Weights_ = Tensor::Zeros({1, K, 1}, dtype_, device_);
+    Means_ = Tensor::Zeros({1, K, D}, dtype_, device_);
+    Covariances_ = Tensor::Zeros({1, K, D, D}, dtype_, device_);
+    Covs_Chol_ = Tensor::Zeros({1, K, D, D}, dtype_, device_);
+    Precs_Chol_ = Tensor::Zeros({1, K, D, D}, dtype_, device_);
 
-    amax__ = Tensor::Zeros({ N, 1, 1 }, dtype_, device_);
-    Log_Det_Cholesky__ = Tensor::Zeros({ K, 1 }, dtype_, device_);
-    Log_Det_Cholesky_Tmp__ = Tensor::Zeros({ K, D }, dtype_, device_);
-    eDiff__ = Tensor::Zeros({ N, K, D, 1 }, dtype_, device_);
-    Log_Prob_Norm__ = Tensor::Zeros({ N, 1, 1 }, dtype_, device_);
+    amax__ = Tensor::Zeros({N, 1, 1}, dtype_, device_);
+    Log_Det_Cholesky__ = Tensor::Zeros({K, 1}, dtype_, device_);
+    Log_Det_Cholesky_Tmp__ = Tensor::Zeros({K, D}, dtype_, device_);
+    eDiff__ = Tensor::Zeros({N, K, D, 1}, dtype_, device_);
+    Log_Prob_Norm__ = Tensor::Zeros({N, 1, 1}, dtype_, device_);
 
-    Nk__ = Tensor::Zeros({ 1, K }, dtype_, device_);
-    mDiff__ = Tensor::Zeros({ K, D, N }, dtype_, device_);
-    third_eye__ = Tensor::Zeros({ K, D, D }, dtype_, device_);
-    A__ = Tensor::Zeros({ K, D, D }, dtype_, device_);
-    B__ = Tensor::Zeros({ K, D, D }, dtype_, device_);
-    Log_Resp__ = Tensor::Zeros({ N, K, 1 }, dtype_, device_);
+    Nk__ = Tensor::Zeros({1, K}, dtype_, device_);
+    mDiff__ = Tensor::Zeros({K, D, N}, dtype_, device_);
+    third_eye__ = Tensor::Zeros({K, D, D}, dtype_, device_);
+    A__ = Tensor::Zeros({K, D, D}, dtype_, device_);
+    B__ = Tensor::Zeros({K, D, D}, dtype_, device_);
+    Log_Resp__ = Tensor::Zeros({N, K, 1}, dtype_, device_);
 
     updateHostfromDevice();
 
@@ -134,14 +134,14 @@ public:
 
   void updateHostfromDevice()
   {
-    weights_ = TensorToEigenMatrix<T>(Weights_.Reshape({ n_components_, 1 }));
-    means_ = TensorToEigenMatrix<T>(Means_.Reshape({ n_components_, D }));
+    weights_ = TensorToEigenMatrix<T>(Weights_.Reshape({n_components_, 1}));
+    means_ = TensorToEigenMatrix<T>(Means_.Reshape({n_components_, D}));
     covariances_ =
-        TensorToEigenMatrix<T>(Covariances_.Reshape({ n_components_, D * D }));
+        TensorToEigenMatrix<T>(Covariances_.Reshape({n_components_, D * D}));
     covariances_cholesky_ =
-        TensorToEigenMatrix<T>(Covs_Chol_.Reshape({ n_components_, D * D }));
+        TensorToEigenMatrix<T>(Covs_Chol_.Reshape({n_components_, D * D}));
     precisions_cholesky_ =
-        TensorToEigenMatrix<T>(Precs_Chol_.Reshape({ n_components_, D * D }));
+        TensorToEigenMatrix<T>(Precs_Chol_.Reshape({n_components_, D * D}));
   }
 
   void updateDevicefromHost()
@@ -157,10 +157,16 @@ public:
                       .Reshape(Precs_Chol_.GetShape());
   }
 
-  void updateDeviceAndHostExternal(const Vector& weights, const MatrixXD& means,
-                                   const MatrixXC& covariances,
-                                   const MatrixXC& precisions_cholesky)
+  void updateDeviceAndHostExternal(const Vector &weights, const MatrixXD &means,
+                                   const MatrixXC &covariances,
+                                   const MatrixXC &precisions_cholesky)
   {
+    n_components_ = means.rows();
+
+    initialize(false, "a", "b");
+
+    int K = n_components_;
+
     Weights_ =
         EigenMatrixToTensor(weights, device_).Reshape(Weights_.GetShape());
     Means_ = EigenMatrixToTensor(means, device_).Reshape(Means_.GetShape());
@@ -169,52 +175,58 @@ public:
     Covs_Chol_ = Covariances_[0].LLTBatched().Reshape(Covs_Chol_.GetShape());
     Precs_Chol_ = EigenMatrixToTensor(precisions_cholesky, device_)
                       .Reshape(Precs_Chol_.GetShape());
+
+    weights_ = weights;
+    means_ = means;
+    covariances_ = covariances;
+    precisions_cholesky_ = precisions_cholesky;
+    covariances_cholesky_ =
+        TensorToEigenMatrix<T>(Covs_Chol_.Reshape({n_components_, D * D}));
   }
 
-  void logSumExp(const Tensor& in, const unsigned int dim, Tensor& out)
+  void logSumExp(const Tensor &in, const unsigned int dim, Tensor &out)
   {
-    amax__ = in.Max({ dim }, true);
-    ((in - amax__).Exp()).Sum_({ dim }, true, out);
+    amax__ = in.Max({dim}, true);
+    ((in - amax__).Exp()).Sum_({dim}, true, out);
     out.Log_();
     out.Add_(amax__);
   }
 
-  void estimateWeightedLogProb(const Tensor& Xt, unsigned int n_samples,
-                               Tensor& Weighted_Log_Prob)
+  void estimateWeightedLogProb(const Tensor &Xt, unsigned int n_samples,
+                               Tensor &Weighted_Log_Prob)
   {
     // Term 2 of Equation (3.14)
-    //Log_Det_Cholesky__ = ((GetDiagonal(Precs_Chol_[0]).Log()).Sum({ 1 }, true))
+    // Log_Det_Cholesky__ = ((GetDiagonal(Precs_Chol_[0]).Log()).Sum({ 1 }, true))
     //                         .Reshape({ 1, n_components_, 1 });
 
-    int N = n_samples_;
     int K = n_components_;
 
     Log_Det_Cholesky__.Fill<float>(0.0);
     Tensor Log_Det_Cholesky_View = (GetDiagonal(Precs_Chol_[0]));
     Log_Det_Cholesky_Tmp__.CopyFrom(Log_Det_Cholesky_View);
     Log_Det_Cholesky_Tmp__.Log_();
-    Log_Det_Cholesky_Tmp__.Sum_({ 1 }, true, Log_Det_Cholesky__);
+    Log_Det_Cholesky_Tmp__.Sum_({1}, true, Log_Det_Cholesky__);
 
     // Diff, PDiff, Log_Gaussian_Prob are all terms for the first
     // term in Equation (3.14)
-    eDiff__ = (Xt.Reshape({ n_samples, 1, D }) - Means_)
-                  .Reshape({ n_samples, n_components_, D, 1 });
+    eDiff__ = (Xt.Reshape({n_samples, 1, D}) - Means_)
+                  .Reshape({n_samples, n_components_, D, 1});
 
     eDiff__ = (Precs_Chol_.Mul(eDiff__))
-                  .Sum({ 2 }, true)
-                  .Reshape({ n_samples, n_components_, D, 1 });
+                  .Sum({2}, true)
+                  .Reshape({n_samples, n_components_, D, 1});
 
     // Equation (3.14), output of estimateLogGaussianProb
-    (eDiff__.Mul(eDiff__)).Sum_({ 2 }, false, Weighted_Log_Prob);
+    (eDiff__.Mul(eDiff__)).Sum_({2}, false, Weighted_Log_Prob);
     Weighted_Log_Prob.Add_(D * LOG_2_M_PI);
     Weighted_Log_Prob.Mul_(-0.5);
-    Weighted_Log_Prob.Add_(Log_Det_Cholesky__.Reshape({ 1, K, 1 }));
+    Weighted_Log_Prob.Add_(Log_Det_Cholesky__.Reshape({1, K, 1}));
 
     // This is the first two terms in Equation (3.7)
     Weighted_Log_Prob.Add_(Weights_.Log());
   }
 
-  void eStep(const Tensor& Xt)
+  void eStep(const Tensor &Xt)
   {
     tp_.tic("eStep");
 
@@ -231,12 +243,12 @@ public:
 
     Log_Resp__.Sub_(Log_Prob_Norm__);
 
-    likelihood_ = Log_Prob_Norm__.Mean({ 0, 1, 2 }, false).Item<T>();
+    likelihood_ = Log_Prob_Norm__.Mean({0, 1, 2}, false).Item<T>();
 
     tp_.toc("eStep");
   }
 
-  void mStep(const Tensor& Xt, const Tensor& Respt)
+  void mStep(const Tensor &Xt, const Tensor &Respt)
   {
     tp_.tic("mStep");
     if (n_samples_ == 0)
@@ -247,41 +259,41 @@ public:
 
     // initialize tensor for weights
     Nk__.Fill<float>(0.0);
-    Respt.Sum_({ 0 }, true, Nk__);
+    Respt.Sum_({0}, true, Nk__);
     Weights_ = Nk__.T();
-    Weights_.Add_(Tensor::Ones({ n_components_, 1 }, dtype_, device_) * 10 *
-		  std::numeric_limits<T>::epsilon());
+    Weights_.Add_(Tensor::Ones({n_components_, 1}, dtype_, device_) * 10 *
+                  std::numeric_limits<T>::epsilon());
 
     // update means
     Means_ = (Respt.T().Matmul(Xt)).Div(Weights_).Reshape(Means_.GetShape());
 
     // update covariances
-    mDiff__ = (Xt.Reshape({ n_samples_, 1, D }) - Means_)
-                  .AsStrided({ n_components_, D, n_samples_ },
-                             { D, 1, D * n_components_ });
+    mDiff__ = (Xt.Reshape({n_samples_, 1, D}) - Means_)
+                  .AsStrided({n_components_, D, n_samples_},
+                             {D, 1, D * n_components_});
 
     Covariances_ =
         mDiff__
             .MatmulBatched(mDiff__.Transpose(1, 2) *
-                           Respt.AsStrided({ n_components_, n_samples_, 1 },
-                                           { 1, n_components_, 1 }))
+                           Respt.AsStrided({n_components_, n_samples_, 1},
+                                           {1, n_components_, 1}))
             .Reshape(Covariances_.GetShape());
 
-    Covariances_.Div_(Weights_.Reshape({ 1, n_components_, 1, 1 }));
+    Covariances_.Div_(Weights_.Reshape({1, n_components_, 1, 1}));
 
     // add reg_covar_ along the diagonal for Covariances_
     Covariances_[0]
-        .AsStrided({ n_components_, D }, { C, D + 1 })
+        .AsStrided({n_components_, D}, {C, D + 1})
         .Add_(reg_covar_);
 
     // update weights
     Weights_.Div_(n_samples_);
-    Weights_.Div_(Weights_.Sum({ 0 }, false));
+    Weights_.Div_(Weights_.Sum({0}, false));
 
     // update precision and covariance cholesky
     Covs_Chol_ = Covariances_[0].LLTBatched().Reshape(Covs_Chol_.GetShape());
 
-    third_eye__.AsStrided({ n_components_, D }, { C, D + 1 })
+    third_eye__.AsStrided({n_components_, D}, {C, D + 1})
         .Fill(static_cast<T>(1));
 
     A__ = Covs_Chol_[0].Transpose(1, 2).MatmulBatched(Covs_Chol_[0]);
@@ -292,7 +304,7 @@ public:
     tp_.toc("mStep");
   }
 
-  bool fit(const Tensor& Xt, const Tensor& Respt)
+  bool fit(const Tensor &Xt, const Tensor &Respt)
   {
     tp_.tic("fit");
 
@@ -324,7 +336,7 @@ public:
       eStep(Xt);
 
       // M step
-      mStep(Xt, Log_Resp__.Exp().Reshape({ n_samples_, n_components_ }));
+      mStep(Xt, Log_Resp__.Exp().Reshape({n_samples_, n_components_}));
 
       // convergence check
       lower_bound = likelihood_;
@@ -335,7 +347,7 @@ public:
         break;
       }
     }
-    
+
     tp_.toc("fit");
 
     o3d::core::MemoryManagerCached::ReleaseCache(device_);
@@ -351,26 +363,32 @@ public:
     }
   }
 
-  void scoreSamples(const Tensor& Xt, Tensor& Per_Sample_Log_Likelihood)
+  void scoreSamples(const Tensor &Xt, Tensor &Per_Sample_Log_Likelihood)
   {
     unsigned int n_samples = Xt.GetShape()[0];
 
-    Tensor Weighted_Log_Prob;
+    Tensor Weighted_Log_Prob = Tensor::Zeros({n_samples, n_components_, 1}, dtype_, device_);
     estimateWeightedLogProb(Xt, n_samples, Weighted_Log_Prob);
 
     // Log likelihood for each sample
-    logSumExp(Weighted_Log_Prob, 1, Per_Sample_Log_Likelihood);
+    Tensor amax = Tensor::Zeros({n_samples, 1, 1}, dtype_, device_);
+    Per_Sample_Log_Likelihood = Tensor::Zeros({n_samples, 1, 1}, dtype_, device_);
+
+    amax = Weighted_Log_Prob.Max({1}, true);
+    ((Weighted_Log_Prob - amax).Exp()).Sum_({1}, true, Per_Sample_Log_Likelihood);
+    Per_Sample_Log_Likelihood.Log_();
+    Per_Sample_Log_Likelihood.Add_(amax);
   }
 
-  T score(const Tensor& Xt)
+  T score(const Tensor &Xt)
   {
     Tensor PSLL;
     scoreSamples(Xt, PSLL);
 
-    return PSLL.Mean({ 0, 1, 2 }).Item<T>();
+    return PSLL.Mean({0, 1, 2}).Item<T>();
   }
 
-  MatrixXD sample(const unsigned int& n_samples, double sigma = 3.0)
+  MatrixXD sample(const unsigned int &n_samples, double sigma = 3.0)
   {
     unsigned int n_samples_comp[n_components_];
 
@@ -425,7 +443,7 @@ public:
     return samples;
   }
 
-  void merge(const GMM& that)
+  void merge(const GMM &that)
   {
     Vector new_weights = Vector::Zero(weights_.rows() + that.weights_.rows());
     MatrixXD new_means =
@@ -460,9 +478,9 @@ public:
     n_components_ += that.n_components_;
   }
 
-  void mvnPdf(const Matrix& X, const Matrix& mu, const Matrix& sigma,
-              const Matrix& Xminusmean, int k, Matrix& probs, Matrix& Linv,
-              Matrix& y)
+  void mvnPdf(const Matrix &X, const Matrix &mu, const Matrix &sigma,
+              const Matrix &Xminusmean, int k, Matrix &probs, Matrix &Linv,
+              Matrix &y)
   {
     // compute determinant of covariance matrix.
     T cov_det = static_cast<T>(sigma.determinant());
@@ -488,7 +506,7 @@ public:
     probs.col(k) = ((temp.array().exp()) * norm_factor).transpose();
   }
 
-  std::tuple<Matrix, Matrix, Matrix> colorConditional(const Matrix& X)
+  std::tuple<Matrix, Matrix, Matrix> colorConditional(const Matrix &X)
   {
     int N = X.rows();
 
@@ -522,14 +540,14 @@ public:
     for (int k = 0; k < n_components_; k++)
     {
       // parts of the mean vector
-      mu_kX = means_(k, { 0, 1, 2 });
+      mu_kX = means_(k, {0, 1, 2});
       mu_kli = static_cast<T>(means_(k, 3));
 
       // parts of the covariance matrix
       sigma = Eigen::Map<MatrixDD>(covariances_.row(k).data(), D, D);
-      sigma_kXX = sigma({ 0, 1, 2 }, { 0, 1, 2 });
-      sigma_kXli = sigma({ 0, 1, 2 }, { 3 });
-      sigma_kliX = sigma({ 3 }, { 0, 1, 2 });
+      sigma_kXX = sigma({0, 1, 2}, {0, 1, 2});
+      sigma_kXli = sigma({0, 1, 2}, {3});
+      sigma_kliX = sigma({3}, {0, 1, 2});
       sigma_klili = static_cast<T>(sigma(3, 3));
 
       dev = (X.rowwise() - mu_kX(0, Eigen::all)).transpose();
@@ -598,7 +616,7 @@ public:
   T likelihood_;
 
   // for Box-Muller sampling
-  gsl_rng* r_global_;
+  gsl_rng *r_global_;
   std::default_random_engine generator_;
   std::normal_distribution<T> normal_dist_;
 
