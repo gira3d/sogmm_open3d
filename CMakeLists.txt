@@ -18,8 +18,15 @@ find_package(Open3D REQUIRED)
 find_package(Eigen3 3.4 REQUIRED)
 find_package(self_organizing_gmm REQUIRED)
 find_package(nanoflann REQUIRED)
-find_package(GSL REQUIRED)
 find_package(CUDA REQUIRED)
+
+include(FetchContent)
+FetchContent_Declare(
+  EigenRand
+  GIT_REPOSITORY https://github.com/bab2min/EigenRand.git
+  GIT_TAG        main
+)
+FetchContent_MakeAvailable(EigenRand)
 
 # Setup pybind modules
 pybind11_add_module(gmm_open3d_py src/pybind/gmm_open3d_py.cpp)
@@ -27,13 +34,12 @@ target_include_directories(gmm_open3d_py
   PRIVATE
   include
   ${sogmm_INCLUDE_DIR}
-  ${GSL_INCLUDE_DIRS}
+  ${EigenRand_SOURCE_DIR}
   ${CUDA_INCLUDE_DIRS}
 )
 target_link_libraries(
   gmm_open3d_py
   PRIVATE stdc++fs
-  PRIVATE ${GSL_LIBRARIES}
   PRIVATE Eigen3::Eigen
   PRIVATE Open3D::Open3D
 )
@@ -44,13 +50,12 @@ target_include_directories(sogmm_gpu
   PRIVATE
   include
   ${sogmm_INCLUDE_DIR}
-  ${GSL_INCLUDE_DIRS}
+  ${EigenRand_SOURCE_DIR}
   ${CUDA_INCLUDE_DIRS}
 )
 target_link_libraries(
   sogmm_gpu
   PRIVATE stdc++fs
-  PRIVATE ${GSL_LIBRARIES}
   PRIVATE Eigen3::Eigen
   PRIVATE Open3D::Open3D
   PRIVATE nanoflann::nanoflann

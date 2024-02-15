@@ -7,7 +7,6 @@
 #include <random>
 
 #include <Eigen/Dense>
-#include <gsl/gsl_randist.h>
 
 #include <sogmm_open3d/SOGMMGPU.h>
 

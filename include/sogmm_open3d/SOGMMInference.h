@@ -4,7 +4,7 @@
 #include <random>
 
 #include <Eigen/Dense>
-#include <gsl/gsl_randist.h>
+#include <EigenRand/EigenRand>
 
 #include <self_organizing_gmm/SOGMMInference.h>
 #include <sogmm_open3d/EM.h>
@@ -49,11 +49,6 @@ namespace sogmm
       // reusable containers for GPU data
       Tensor Xt_;
       Tensor scores_;
-
-      SOGMMInference()
-      {
-        cpu_inf_ = CPUInfEng();
-      }
 
       MatrixXD<4> generatePointCloud4D(const Container<4> &sogmm,
                                        const unsigned int &N,
